@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  pmo-agent:
+    build: .
+    container_name: pmo-agent
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=gpt-4
+      - LOG_LEVEL=INFO
+      - DEBUG_MODE=False
+      # Optional: JIRA Configuration
+      - JIRA_SERVER=${JIRA_SERVER}
+      - JIRA_USERNAME=${JIRA_USERNAME}
+      - JIRA_API_TOKEN=${JIRA_API_TOKEN}
+      - JIRA_ENABLED=${JIRA_ENABLED:-False}
+      # Optional: Smartsheet Configuration
+      - SMARTSHEET_API_TOKEN=${SMARTSHEET_API_TOKEN}
+      - SMARTSHEET_ENABLED=${SMARTSHEET_ENABLED:-False}
+    volumes:
+      - ./outputs:/app/outputs
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - pmo-network
+    labels:
+      - "com.example.description=PMO Agent API"
+
+networks:
+  pmo-network:
+    driver: bridge
